@@ -130,7 +130,3 @@ services:
 Contribuciones
 ¡Las contribuciones son bienvenidas! Siéntete libre de abrir un issue o un pull request en este repositorio.
 
-r
-Copiar código
-
-Este bloque incluye todo el contenido del archivo `README.md` junto con el código de los archivos `Do
