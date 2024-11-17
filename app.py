@@ -1,62 +1,98 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
+from sqlalchemy.orm import Session
+from models import Usuario
+from config import SessionLocal
+from pydantic import BaseModel
 
 app = FastAPI()
 
-# Base de datos simulada
-fake_db = []
+# Dependencia para obtener la sesión de la base de datos
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-# Modelo de datos
-class Item:
-    def __init__(self, id: int, name: str, description: str):
-        self.id = id
-        self.name = name
-        self.description = description
+# Modelo Pydantic para la creación y actualización del usuario
+class UsuarioBase(BaseModel):
+    nombre: str
+    email: str
+    password: str
 
-#Leer Conexion Raiz 
-@app.get("/")
-def read_items():
-    return{"Welcome API FastApi"}
+# Crear un usuario
+@app.post("/usuarios/")
+def create_user(user: UsuarioBase, db: Session = Depends(get_db)):
+    # Verificar si el usuario ya existe
+    db_usuario = db.query(Usuario).filter(Usuario.email == user.email).first()
+    if db_usuario:
+        raise HTTPException(status_code=400, detail="El usuario ya existe")
 
-# Crear un elemento
-@app.post("/items/")
-def create_item(item_id: int, name: str, description: str):
-    if any(item.id == item_id for item in fake_db):
-        raise HTTPException(status_code=400, detail="El ID ya existe")
-    item = Item(item_id, name, description)
-    fake_db.append(item)
-    return {"message": "Elemento creado", "item": item.__dict__}
+    # Crear el nuevo usuario
+    new_user = Usuario(nombre=user.nombre, email=user.email)
+    new_user.set_password(user.password)  # Establecer la contraseña con hash
 
-# Leer todos los elementos
-@app.get("/items/")
-def read_items():
-    return {"items": [item.__dict__ for item in fake_db]}
+    # Agregar a la base de datos
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "Usuario creado", "user": new_user}
 
-# Leer un elemento por ID
-@app.get("/items/{item_id}")
-def read_item(item_id: int):
-    for item in fake_db:
-        if item.id == item_id:
-            return {"item": item.__dict__}
-    raise HTTPException(status_code=404, detail="Elemento no encontrado")
+# Leer todos los usuarios
+@app.get("/usuarios/")
+def read_users(db: Session = Depends(get_db)):
+    users = db.query(Usuario).all()
+    return {"users": users}
 
-# Actualizar un elemento
-@app.put("/items/{item_id}")
-def update_item(item_id: int, name: str, description: str):
-    for item in fake_db:
-        if item.id == item_id:
-            item.name = name
-            item.description = description
-            return {"message": "Elemento actualizado", "item": item.__dict__}
-    raise HTTPException(status_code=404, detail="Elemento no encontrado")
+# Leer un usuario por ID
+@app.get("/usuarios/{user_id}")
+def read_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return {"user": user}
 
-# Eliminar un elemento
-@app.delete("/items/{item_id}")
-def delete_item(item_id: int):
-    global fake_db
-    fake_db = [item for item in fake_db if item.id != item_id]
-    return {"message": "Elemento eliminado"}
+# Actualizar un usuario
+@app.put("/usuarios/{user_id}")
+def update_user(user_id: int, user: UsuarioBase, db: Session = Depends(get_db)):
+    db_user = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Actualizar los campos del usuario
+    db_user.nombre = user.nombre
+    db_user.email = user.email
+    db_user.set_password(user.password)  # Establecer nueva contraseña con hash
+    db.commit()
+    db.refresh(db_user)
+    return {"message": "Usuario actualizado", "user": db_user}
+
+# Eliminar un usuario
+@app.delete("/usuarios/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    db.delete(user)
+    db.commit()
+    return {"message": "Usuario eliminado"}
+
+# Login (Verificación de contraseña)
+@app.post("/login/")
+def login(email: str, password: str, db: Session = Depends(get_db)):
+    # Buscar el usuario por correo electrónico
+    db_usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    if db_usuario is None:
+        raise HTTPException(status_code=400, detail="Correo o contraseña incorrectos")
+
+    # Verificar la contraseña
+    if not db_usuario.verify_password(password):
+        raise HTTPException(status_code=400, detail="Correo o contraseña incorrectos")
+
+    return {"message": "Inicio de sesión exitoso", "user": db_usuario}
 
 # Ejecutar la aplicación
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

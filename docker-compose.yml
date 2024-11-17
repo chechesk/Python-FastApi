@@ -1,0 +1,11 @@
+# version: '3'
+
+services:
+  data:
+    container_name: apipython
+    restart: always
+    build: ./
+    ports:
+      - "8000:8000"
+
+  
