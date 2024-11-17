@@ -41,37 +41,37 @@ http://127.0.0.1:8000/redoc - Documentación alternativa Redoc
 Uso de la API
 Endpoints principales
 Método	Endpoint	Descripción
-POST	/items/	Crea un nuevo elemento
-GET	/items/	Obtiene todos los elementos
-GET	/items/{item_id}	Obtiene un elemento por su ID
-PUT	/items/{item_id}	Actualiza un elemento existente
-DELETE	/items/{item_id}	Elimina un elemento por su ID
+POST	/usuarios/	Crea un nuevo elemento
+GET	/usuarios/	Obtiene todos los elementos
+GET	/usuarios/{user_id}	Obtiene un elemento por su ID
+PUT	/usuarios/{user_id}	Actualiza un elemento existente
+DELETE	/usuarios/{user_id}	Elimina un elemento por su ID
 Ejemplo de solicitudes
 Crear un elemento:
 
 bash
 Copiar código
-curl -X POST "http://127.0.0.1:8000/items/?item_id=1&name=Item1&description=Primero"
+curl -X POST "http://127.0.0.1:8000/usuarios/?item_id=1&name=Item1&description=Primero"
 Leer todos los elementos:
 
 bash
 Copiar código
-curl -X GET "http://127.0.0.1:8000/items/"
+curl -X GET "http://127.0.0.1:8000/usuarios/"
 Leer un elemento específico:
 
 bash
 Copiar código
-curl -X GET "http://127.0.0.1:8000/items/1"
+curl -X GET "http://127.0.0.1:8000/usuarios/1"
 Actualizar un elemento:
 
 bash
 Copiar código
-curl -X PUT "http://127.0.0.1:8000/items/1?name=Item1_Updated&description=Actualizado"
+curl -X PUT "http://127.0.0.1:8000/usuarios/1?name=Item1_Updated&description=Actualizado"
 Eliminar un elemento:
 
 bash
 Copiar código
-curl -X DELETE "http://127.0.0.1:8000/items/1"
+curl -X DELETE "http://127.0.0.1:8000/usuarios/1"
 Estructura del proyecto
 bash
 Copiar código
